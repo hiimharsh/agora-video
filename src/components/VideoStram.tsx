@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Text } from "@chakra-ui/react"
 import AgoraRTC, { SessionStats } from "agora-rtc-sdk";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import client from "../lib/agora";
 import config from "../lib/config";
 
@@ -17,17 +17,7 @@ const VideoStream = () => {
     const [audioState, setAudioState] = useState<Boolean>(true);
     const [views, setViews] = useState<number>(0);
 
-    useEffect(() => {
-        if (queryParams === '?host=true') {
-            setIsHost(true);
-            joinChannel('host');
-        } else {
-            setIsHost(false);
-            joinChannel('guest');
-        }
-    }, [setIsHost]);
-
-    const joinChannel = (role: string) => {
+    const joinChannel = useCallback((role: string) => {
         agoraClient.join(token, channel, uid, (uid: string) => {
             setHostUid(uid);
             if (role === 'host') {
@@ -83,7 +73,7 @@ const VideoStream = () => {
                 });
             }
         }, (err: any) => console.error(err))
-    }
+    }, [channel, hostUid, token, uid]);
 
     const toggleVideo = () => {
         if (videoState) localStream!.muteVideo();
@@ -96,6 +86,16 @@ const VideoStream = () => {
         else localStream!.unmuteAudio();
         setAudioState(!audioState);
     }
+
+    useEffect(() => {
+        if (queryParams === '?host=true') {
+            setIsHost(true);
+            joinChannel('host');
+        } else {
+            setIsHost(false);
+            joinChannel('guest');
+        }
+    }, [setIsHost, joinChannel]);
 
     return <>
         <Flex w={['100%', '100%', '80%', '80%', '60%']} mx="auto">
